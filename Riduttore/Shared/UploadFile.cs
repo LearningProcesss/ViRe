@@ -1,0 +1,1 @@
+public record UploadFile(string Name, byte[] Data);

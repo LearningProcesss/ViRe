@@ -1,0 +1,92 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IVideoApiClient _videoApiClient
+@inject Bus _bus
+@inject NavigationManager Navigation
+
+<MudCard @onclick="NavigateDetail">
+    <MudCardMedia Image="@Video?.ThumbnailVaultPath" Height="200" />
+    <MudCardContent>
+        <MudText Typo="Typo.h5">@Video?.Id</MudText>
+        <MudText Typo="Typo.body2">@Video?.Name</MudText>
+        <MudText Typo="Typo.body2">This photo was taken in a small village in Istra Croatia.</MudText>
+    </MudCardContent>
+    <MudCardActions>
+        @if (_processing)
+        {
+            <MudButton Disabled="@_processing" Variant="Variant.Filled" Color="Color.Primary">
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processing</MudText>
+            </MudButton>
+        }
+    </MudCardActions>
+</MudCard>
+
+@code {
+
+    [Parameter]
+    public VideoApiModel? Video { get; set; }
+
+    private HubConnection? hubConnection;
+
+    private bool _processing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl(Navigation.ToAbsoluteUri("/riduttorehub"))
+        .Build();
+
+        SetIsProcessing(Video);
+
+        hubConnection.On<ThumbnailCreatedEvent>(RiduttoreHubEvents.ThumbnailCreated, (@event) =>
+        {
+            if (Video?.Id != @event.Video.Id)
+            {
+                return;
+            }
+
+            Video = @event.Video;
+
+            SetIsProcessing(@event.Video);
+
+            Console.WriteLine($"Received from hub {@event.GetType().Name} - {Video?.Id} - {@event.Video.Id}");
+        });
+
+        hubConnection.On<VideoConvertedEvent>(RiduttoreHubEvents.VideoConverted, (@event) =>
+        {
+            Console.WriteLine($"Received from hub {@event.GetType().Name}");
+
+            if (Video?.Id != @event.Video.Id)
+            {
+                return;
+            }
+
+            Video = @event.Video;
+
+            SetIsProcessing(@event.Video);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private void SetIsProcessing(VideoApiModel? videoApiModel)
+    {
+        if (videoApiModel is null)
+        {
+            return;
+        }
+
+        _processing = string.IsNullOrEmpty(videoApiModel?.ThumbnailPhysicalVaultPath) ||
+        string.IsNullOrEmpty(videoApiModel?.ProcessedPhysicalVaultPath);
+
+        Console.WriteLine($"processing: {_processing}");
+
+        StateHasChanged();
+    }
+
+    private void NavigateDetail()
+    {
+        Console.WriteLine("Navigate to");
+        Navigation.NavigateTo($"/videos/{Video?.Id}");
+    }
+}

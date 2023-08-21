@@ -1,0 +1,1 @@
+public sealed record VideoUploaded(VideoApiModel Video);

@@ -1,0 +1,1 @@
+public sealed record GetVideoByIdCommand(Guid Id);

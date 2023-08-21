@@ -1,0 +1,69 @@
+@page "/videos/{id}"
+@inject IVideoApiClient _videoApiClient
+@inject NavigationManager _navigation
+@inject IJSRuntime _jSRuntime;
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h2">@_videoApiModel?.Name</MudText>
+            <MudTextField T="string" Text="@_videoApiModel?.NativeSizeReadable" Label="Native size" ReadOnly="true"
+                Variant="Variant.Outlined" />
+            <MudTextField T="string" Text="@_videoApiModel?.ProcessedSizeReadable" Label="Processed size"
+                ReadOnly="true" Variant="Variant.Outlined" />
+        </MudPaper>
+        <MudPaper Class="pa-4 mt-4">
+            <MudGrid Spacing="5" Justify="Justify.Center">
+                <MudItem>
+                    <MudFab @onclick="Download" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudDownload"
+                        Size="Size.Large" />
+                </MudItem>
+                <MudItem>
+                    <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Task" />
+                </MudItem>
+                <MudItem>
+                    <MudFab Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <video style="width: 100% !important; height: 100% !important;" controls>
+                <source src="@_videoApiModel?.ProcessedVaultPath" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="12">
+        <MudButton @onclick="NavigateBack" Variant="Variant.Filled" Color="Color.Primary"
+            StartIcon="@Icons.Material.Filled.ArrowBack" FullWidth="true">Back</MudButton>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    private VideoApiModel? _videoApiModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine($"page with par: {Id}");
+
+        _videoApiModel = await _videoApiClient.GetVideoById(Id!);
+
+        StateHasChanged();
+    }
+
+    private void Download()
+    {
+        _navigation.NavigateTo(_videoApiModel?.ProcessedVaultPath, true);
+        @* await _jSRuntime.InvokeAsync<object>("open", _videoApiModel.ProcessedVaultPath, "_blank"); *@
+    }
+
+    private void NavigateBack()
+    {
+        _navigation.NavigateTo("/");
+    }
+}

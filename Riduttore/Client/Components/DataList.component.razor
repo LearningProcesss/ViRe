@@ -1,0 +1,59 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IVideoApiClient _videoApiClient
+@inject Bus _bus
+@inject NavigationManager Navigation
+
+@if (_videos is not null)
+{
+    <MudGrid Spacing="5" Justify="Justify.SpaceBetween">
+    @foreach (VideoApiModel video in _videos)
+        {
+            <MudItem xs="4">
+                @* <MudCard>
+                    <MudCardMedia Image="images/door.jpg" Height="200" />
+                    <MudCardContent>
+                        <MudText Typo="Typo.h5">@video.Id</MudText>
+                        <MudText Typo="Typo.body2">@video.Name</MudText>
+                        <MudText Typo="Typo.body2">This photo was taken in a small village in Istra Croatia.</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary">Share</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary">Learn More</MudButton>
+                    </MudCardActions>
+                </MudCard> *@
+                <VideoItem_component Video="@video" />
+            </MudItem>
+        }
+        </MudGrid>
+}
+
+@code {
+    private HubConnection? hubConnection;
+    private IEnumerable<VideoApiModel>? _videos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _videos = await _videoApiClient.GetVideos(1);
+
+        _bus.Subscribe<VideoUploaded>(async (video) =>
+        {
+            _videos = await _videoApiClient.GetVideos(1);
+
+            this.StateHasChanged();
+        });
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/riduttorehub"))
+            .Build();
+
+        hubConnection.On<VideoUploadedEvent>(RiduttoreHubEvents.VideoUploaded, (@event) =>
+        {
+            @* var encodedMsg = $"{user}: {message}";
+            messages.Add(encodedMsg); *@
+            Console.WriteLine("Received from hub");
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+    }
+}
