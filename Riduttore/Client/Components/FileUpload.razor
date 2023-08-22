@@ -1,0 +1,99 @@
+@inject ISnackbar _snackbar
+@inject IDialogService _dialogService
+@inject HttpClient _httpClient
+@inject IVideoApiClient _videoApiClient
+@inject Bus _bus
+
+<MudFab HtmlTag="label" Color="Color.Tertiary" Class="fab-right-corner" Icon="@Icons.Material.Filled.AddCircle"
+@onclick="() => this._isVisible = true" />
+<MudDialog @bind-IsVisible="_isVisible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="mr-3" /> Upload file
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" Text="@_browserFile?.Name" Label="File name" ReadOnly="true"
+            Variant="Variant.Outlined" />
+        <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged">
+            <ButtonTemplate>
+                <MudButton FullWidth="true" HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" for="@context">
+                    Select file
+                </MudButton>
+            </ButtonTemplate>
+        </MudFileUpload>
+        <MudButton Disabled="IsDisabledUpload" FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+            OnClick="@(async () => await Upload())" Class="mt-10 mb-5">
+            Upload
+        </MudButton>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .fab-right-corner {
+        position: fixed !important;
+        right: 10px !important;
+        bottom: 10px !important;
+    }
+
+    @@media (min-width: 800px) {
+        .fab-right-corner {
+            display: none;
+        }
+    }
+</style>
+
+@code {
+    private bool _isVisible = false;
+    private IBrowserFile? _browserFile;
+
+    private bool IsDisabledUpload => _browserFile == null;
+
+    protected override void OnInitialized()
+    {
+        _bus.Subscribe<OpenModalUpload>(_ =>
+        {
+            _isVisible = true;
+
+            this.StateHasChanged();
+        });
+    }
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        _browserFile = e.File;
+    }
+
+    private async Task Upload()
+    {
+        _snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        _snackbar.Add("TODO: Upload your files!", Severity.Normal);
+
+        @* await videoApiClient.GetVideoById("fjfjfj"); *@
+
+        @* await videoApiClient.Upload(new Refit.StreamPart(_browserFile!.OpenReadStream(long.MaxValue), _browserFile.Name,
+_browserFile.ContentType, "files")); *@
+
+        StreamContent fileContent = new(_browserFile!.OpenReadStream(long.MaxValue));
+
+        using MultipartFormDataContent multipartFormDataContent = new();
+
+        fileContent.Headers.ContentType =
+        new System.Net.Http.Headers.MediaTypeHeaderValue(_browserFile.ContentType);
+
+        multipartFormDataContent.Add(content: fileContent,
+        name: "\"files\"",
+        fileName: _browserFile.Name);
+
+        var response = await _httpClient.PostAsync("/api/videos", multipartFormDataContent);
+
+        response.EnsureSuccessStatusCode();
+
+        VideoApiModel? newUploadResults = await response.Content
+        .ReadFromJsonAsync<VideoApiModel>();
+
+        _isVisible = false;
+
+        _bus.Publish(new VideoUploaded(newUploadResults!));
+    }
+}
