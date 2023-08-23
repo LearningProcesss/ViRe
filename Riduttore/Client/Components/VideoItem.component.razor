@@ -4,11 +4,11 @@
 @inject NavigationManager Navigation
 
 <MudCard @onclick="NavigateDetail">
-    <MudCardMedia Image="@Video?.ThumbnailVaultPath" Height="200" />
+    <MudCardMedia Image="@Video?.ThumbnailVaultPath" Height="300" />
     <MudCardContent>
-        <MudText Typo="Typo.h5">@Video?.Id</MudText>
-        <MudText Typo="Typo.body2">@Video?.Name</MudText>
-        <MudText Typo="Typo.body2">This photo was taken in a small village in Istra Croatia.</MudText>
+        <MudText Typo="Typo.h5">@Video?.Name</MudText>
+        <MudText Typo="Typo.body2">@Video?.Id</MudText>
+        <MudText><b>Created on</b> @Video?.CreatedOn</MudText>
     </MudCardContent>
     <MudCardActions>
         @if (_processing)
