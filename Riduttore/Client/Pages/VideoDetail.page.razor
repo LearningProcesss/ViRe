@@ -6,7 +6,7 @@
 <MudGrid Class="mt-4">
     <MudItem xs="12" sm="7">
         <MudPaper Class="pa-4">
-            <MudText Typo="Typo.h2">@_videoApiModel?.Name</MudText>
+            <MudText Typo="Typo.h2" Class="word-wrap">@_videoApiModel?.Name</MudText>
             <MudTextField T="string" Text="@_videoApiModel?.NativeSizeReadable" Label="Native size" ReadOnly="true"
                 Variant="Variant.Outlined" />
             <MudTextField T="string" Text="@_videoApiModel?.ProcessedSizeReadable" Label="Processed size"
@@ -40,6 +40,12 @@
             StartIcon="@Icons.Material.Filled.ArrowBack" FullWidth="true">Back</MudButton>
     </MudItem>
 </MudGrid>
+
+<style>
+    .word-wrap {
+        word-break: break-all;
+    }
+</style>
 
 @code {
     [Parameter]
