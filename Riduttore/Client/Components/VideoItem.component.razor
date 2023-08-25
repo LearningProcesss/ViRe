@@ -48,14 +48,10 @@
             Video = @event.Video;
 
             SetIsProcessing(@event.Video);
-
-            Console.WriteLine($"Received from hub {@event.GetType().Name} - {Video?.Id} - {@event.Video.Id}");
         });
 
         hubConnection.On<VideoConvertedEvent>(RiduttoreHubEvents.VideoConverted, (@event) =>
         {
-            Console.WriteLine($"Received from hub {@event.GetType().Name}");
-
             if (Video?.Id != @event.Video.Id)
             {
                 return;
@@ -79,14 +75,11 @@
         _processing = string.IsNullOrEmpty(videoApiModel?.ThumbnailPhysicalVaultPath) ||
         string.IsNullOrEmpty(videoApiModel?.ProcessedPhysicalVaultPath);
 
-        Console.WriteLine($"processing: {_processing}");
-
         StateHasChanged();
     }
 
     private void NavigateDetail()
     {
-        Console.WriteLine("Navigate to");
         Navigation.NavigateTo($"/videos/{Video?.Id}");
     }
 }

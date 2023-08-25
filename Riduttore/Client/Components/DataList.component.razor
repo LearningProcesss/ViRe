@@ -34,13 +34,11 @@
             .WithUrl(Navigation.ToAbsoluteUri("/riduttorehub"))
             .Build();
 
-        hubConnection.On<VideoUploadedEvent>(RiduttoreHubEvents.VideoUploaded, (@event) =>
+        @* hubConnection.On<VideoUploadedEvent>(RiduttoreHubEvents.VideoUploaded, (@event) =>
         {
-            @* var encodedMsg = $"{user}: {message}";
-            messages.Add(encodedMsg); *@
             Console.WriteLine("Received from hub");
             StateHasChanged();
-        });
+        }); *@
 
         await hubConnection.StartAsync();
     }
