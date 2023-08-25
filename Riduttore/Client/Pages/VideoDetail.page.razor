@@ -1,4 +1,5 @@
 @page "/videos/{id}"
+@using Microsoft.AspNetCore.SignalR.Client
 @inject IVideoApiClient _videoApiClient
 @inject NavigationManager _navigation
 @inject IJSRuntime _jSRuntime;
@@ -6,17 +7,24 @@
 <MudGrid Class="mt-4">
     <MudItem xs="12" sm="7">
         <MudPaper Class="pa-4">
-            <MudText Typo="Typo.h2" Class="word-wrap">@_videoApiModel?.Name</MudText>
-            <MudTextField T="string" Text="@_videoApiModel?.NativeSizeReadable" Label="Native size" ReadOnly="true"
+            <MudText Typo="Typo.h2" Class="word-wrap">@_video?.Name</MudText>
+            <MudTextField T="string" Text="@_video?.NativeSizeReadable" Label="Native size" ReadOnly="true"
                 Variant="Variant.Outlined" />
-            <MudTextField T="string" Text="@_videoApiModel?.ProcessedSizeReadable" Label="Processed size"
-                ReadOnly="true" Variant="Variant.Outlined" />
+            <MudTextField T="string" Text="@_video?.ProcessedSizeReadable" Label="Processed size" ReadOnly="true"
+                Variant="Variant.Outlined" />
+            @if (_processing)
+            {
+                <MudButton Class="mt-2" Disabled="@_processing" Variant="Variant.Filled" Color="Color.Primary">
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                </MudButton>
+            }
         </MudPaper>
         <MudPaper Class="pa-4 mt-4">
             <MudGrid Spacing="5" Justify="Justify.Center">
                 <MudItem>
-                    <MudFab @onclick="Download" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CloudDownload"
-                        Size="Size.Large" />
+                    <MudFab Disabled="@_processing" @onclick="Download" Color="Color.Primary"
+                        StartIcon="@Icons.Material.Filled.CloudDownload" Size="Size.Large" />
                 </MudItem>
                 <MudItem>
                     <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Task" />
@@ -30,7 +38,7 @@
     <MudItem xs="12" sm="5">
         <MudPaper Class="pa-4 mud-height-full">
             <video style="width: 100% !important; height: 100% !important;" controls>
-                <source src="@_videoApiModel?.ProcessedVaultPath" type="video/mp4">
+                <source src="@_video?.ProcessedVaultPath" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
         </MudPaper>
@@ -51,25 +59,70 @@
     [Parameter]
     public string? Id { get; set; }
 
-    private VideoApiModel? _videoApiModel;
+    private HubConnection? _hubConnection;
+    private VideoApiModel? _video;
+    private bool _processing = false;
+
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"page with par: {Id}");
+        _video = await _videoApiClient.GetVideoById(Id!);
 
-        _videoApiModel = await _videoApiClient.GetVideoById(Id!);
+        SetIsProcessing(_video);
 
-        StateHasChanged();
+        _hubConnection = new HubConnectionBuilder()
+        .WithUrl(_navigation.ToAbsoluteUri("/riduttorehub"))
+        .Build();
+
+        _hubConnection.On<ThumbnailCreatedEvent>(RiduttoreHubEvents.ThumbnailCreated, (@event) =>
+        {
+            if (_video?.Id != @event.Video.Id)
+            {
+                return;
+            }
+
+            _video = @event.Video;
+
+            SetIsProcessing(@event.Video);
+        });
+
+        _hubConnection.On<VideoConvertedEvent>(RiduttoreHubEvents.VideoConverted, (@event) =>
+        {
+            if (_video?.Id != @event.Video.Id)
+            {
+                return;
+            }
+
+            _video = @event.Video;
+
+            SetIsProcessing(@event.Video);
+        });
+
+        await _hubConnection.StartAsync();
     }
 
     private void Download()
     {
-        _navigation.NavigateTo(_videoApiModel?.ProcessedVaultPath, true);
+        _navigation.NavigateTo(_video?.ProcessedVaultPath, true);
         @* await _jSRuntime.InvokeAsync<object>("open", _videoApiModel.ProcessedVaultPath, "_blank"); *@
     }
 
     private void NavigateBack()
     {
         _navigation.NavigateTo("/");
+    }
+
+    private void SetIsProcessing(VideoApiModel? videoApiModel)
+    {
+        if (videoApiModel is null)
+        {
+            return;
+        }
+
+        _processing = string.IsNullOrEmpty(videoApiModel?.ThumbnailPhysicalVaultPath)
+        ||
+        string.IsNullOrEmpty(videoApiModel?.ProcessedPhysicalVaultPath);
+
+        StateHasChanged();
     }
 }
