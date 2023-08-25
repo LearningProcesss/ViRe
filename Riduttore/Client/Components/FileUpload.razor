@@ -2,6 +2,7 @@
 @inject IDialogService _dialogService
 @inject HttpClient _httpClient
 @inject IVideoApiClient _videoApiClient
+@inject NavigationManager _navigation
 @inject Bus _bus
 
 <MudFab HtmlTag="label" Color="Color.Tertiary" Class="fab-right-corner" Icon="@Icons.Material.Filled.AddCircle"
@@ -89,11 +90,12 @@ _browserFile.ContentType, "files")); *@
 
         response.EnsureSuccessStatusCode();
 
-        VideoApiModel? newUploadResults = await response.Content
-        .ReadFromJsonAsync<VideoApiModel>();
+        VideoApiModel? newUploadResults = await response.Content.ReadFromJsonAsync<VideoApiModel>();
 
         _isVisible = false;
 
         _bus.Publish(new VideoUploaded(newUploadResults!));
+
+        _navigation.NavigateTo($"/videos/{newUploadResults?.Id}");
     }
 }
