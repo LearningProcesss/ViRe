@@ -1,7 +1,8 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @inject IVideoApiClient _videoApiClient
 @inject Bus _bus
-@inject NavigationManager Navigation
+@inject NavigationManager _navigation
+@inject IDialogService _dialogService
 
 @if (_videos is not null)
 {
@@ -12,8 +13,27 @@
                 <VideoItem_component Video="@video" />
             </MudItem>
         }
-        </MudGrid>
+    </MudGrid>
 }
+<MudFab HtmlTag="label" 
+        Color="Color.Tertiary" 
+        Class="fab-right-corner" 
+        Icon="@Icons.Material.Filled.AddCircle"
+        @onclick="OpenDialog" />
+
+<style>
+    .fab-right-corner {
+        position: fixed !important;
+        right: 10px !important;
+        bottom: 10px !important;
+    }
+
+    @@media (min-width: 800px) {
+        .fab-right-corner {
+            display: none;
+        }
+    }
+</style>
 
 @code {
     private HubConnection? hubConnection;
@@ -31,7 +51,7 @@
         });
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/riduttorehub"))
+            .WithUrl(_navigation.ToAbsoluteUri("/riduttorehub"))
             .Build();
 
         @* hubConnection.On<VideoUploadedEvent>(RiduttoreHubEvents.VideoUploaded, (@event) =>
@@ -41,5 +61,12 @@
         }); *@
 
         await hubConnection.StartAsync();
+    }
+
+    private void OpenDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        _dialogService.Show<FileUpload>("Simple Dialog", options);
     }
 }

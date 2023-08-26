@@ -63,8 +63,7 @@
     private VideoApiModel? _video;
     private bool _processing = false;
 
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         _video = await _videoApiClient.GetVideoById(Id!);
 
