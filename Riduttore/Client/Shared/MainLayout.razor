@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject Bus _bus
+@inject IDialogService _dialogService
+@using Riduttore.Client.Components
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -10,10 +12,21 @@
         <MudToolBar>
             <MudText Typo="Typo.h4" Class="mr-5">ViRe</MudText>
             <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" OnClick="() => _bus.Publish(new OpenModalUpload())" />
+            <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large"
+                           @onclick="OpenDialog" />
         </MudToolBar>
     </MudPaper>
     <article class="content px-4">
         @Body
     </article>
 </div>
+
+@code {
+
+    private void OpenDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        _dialogService.Show<FileUpload>("Simple Dialog", options);
+    }
+}

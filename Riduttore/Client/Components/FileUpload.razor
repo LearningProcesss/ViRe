@@ -5,9 +5,10 @@
 @inject NavigationManager _navigation
 @inject Bus _bus
 
-<MudFab HtmlTag="label" Color="Color.Tertiary" Class="fab-right-corner" Icon="@Icons.Material.Filled.AddCircle"
-@onclick="() => this._isVisible = true" />
-<MudDialog @bind-IsVisible="_isVisible">
+@* <MudFab HtmlTag="label" Color="Color.Tertiary" Class="fab-right-corner" Icon="@Icons.Material.Filled.AddCircle"
+@onclick="() => this._isVisible = true" /> *@
+@* <MudDialog @bind-IsVisible="_isVisible"> *@
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="mr-3" /> Upload file
@@ -18,7 +19,8 @@
             Variant="Variant.Outlined" />
         <MudFileUpload T="IBrowserFile" OnFilesChanged="OnInputFileChanged">
             <ButtonTemplate>
-                <MudButton FullWidth="true" HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" for="@context">
+                <MudButton FullWidth="true" HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary"
+                    for="@context">
                     Select file
                 </MudButton>
             </ButtonTemplate>
@@ -30,26 +32,27 @@
     </DialogContent>
 </MudDialog>
 
-<style>
-    .fab-right-corner {
-        position: fixed !important;
-        right: 10px !important;
-        bottom: 10px !important;
-    }
+@* <style>
+.fab-right-corner {
+position: fixed !important;
+right: 10px !important;
+bottom: 10px !important;
+}
 
-    @@media (min-width: 800px) {
-        .fab-right-corner {
-            display: none;
-        }
-    }
-</style>
+@@media (min-width: 800px) {
+.fab-right-corner {
+display: none;
+}
+}
+</style> *@
 
 @code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
     private bool _isVisible = false;
     private IBrowserFile? _browserFile;
-
     private bool IsDisabledUpload => _browserFile == null;
-
+    
     protected override void OnInitialized()
     {
         _bus.Subscribe<OpenModalUpload>(_ =>
@@ -98,4 +101,7 @@ _browserFile.ContentType, "files")); *@
 
         _navigation.NavigateTo($"/videos/{newUploadResults?.Id}");
     }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
 }
